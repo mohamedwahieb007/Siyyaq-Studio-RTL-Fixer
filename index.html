@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siyyaq Studio | Advanced RTL Formatter</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
     <style>
         :root {
             --bg-color: #f5f5f7;
@@ -271,6 +272,9 @@
             cursor: pointer;
             transition: all 0.2s;
             font-family: inherit;
+            position: relative;
+            z-index: 5;
+            pointer-events: auto;
         }
 
         button:hover {
@@ -330,7 +334,7 @@
                 </div>
             </div>
             <div>
-                <button type="button" class="btn-primary" id="processBtn" aria-label="Process and format the input text">Process Text</button>
+                <button type="button" class="btn-primary" id="processBtn" onclick="processText()" aria-label="Process and format the input text">Process Text</button>
             </div>
         </header>
 
@@ -340,7 +344,7 @@
                 <div class="panel-header">Raw Input</div>
                 <textarea id="inputText" aria-label="Input mixed text box" placeholder="Paste mixed Arabic/English text here. Code blocks stay as-is in place..."></textarea>
                 <div class="actions">
-                    <button type="button" id="clearBtn" aria-label="Clear input text">Clear Input</button>
+                    <button type="button" id="clearBtn" onclick="clearText()" aria-label="Clear input text">Clear Input</button>
                 </div>
             </section>
 
@@ -354,7 +358,7 @@
                 <div class="panel-header">
                     <span>Organized Output</span>
                     <div style="display: flex; gap: 8px;">
-                        <button type="button" id="copyBtn" style="padding: 4px 10px;" aria-label="Copy organized text">Copy Text</button>
+                        <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
                     </div>
                 </div>
                 <div id="outputText" class="output-box" aria-live="polite">
@@ -367,39 +371,7 @@
     <div id="toast" class="toast" role="status">Copied Successfully!</div>
 
     <script>
-        // Slider Logic
-        const resizer = document.getElementById('dragMe');
-        const leftPanel = document.getElementById('leftPanel');
-        const workspace = document.getElementById('workspace');
-
-        let isDragging = false;
-
-        resizer.addEventListener('mousedown', (e) => {
-            isDragging = true;
-            resizer.classList.add('active');
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
-        });
-
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            const containerRect = workspace.getBoundingClientRect();
-            let newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
-            if (newWidthPercent < 20) newWidthPercent = 20;
-            if (newWidthPercent > 75) newWidthPercent = 75;
-            leftPanel.style.width = `${newWidthPercent}%`;
-        });
-
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                resizer.classList.remove('active');
-                document.body.style.cursor = 'default';
-                document.body.style.userSelect = 'auto';
-            }
-        });
-
-        // Processing Logic — يحافظ على الكود في مكانه ويعرضه كما هو
+        // App functions first so onclick handlers always work even if later setup fails
         function escapeHtml(str) {
             return String(str)
                 .replace(/&/g, '&amp;')
@@ -445,7 +417,6 @@
                 const line = lines[i];
                 const trimmed = line.trim();
 
-                // كتلة ``` أو ~~~
                 const fenceMatch = trimmed.match(/^(```|~~~)(\S*)\s*$/);
                 if (fenceMatch) {
                     const fence = fenceMatch[1];
@@ -461,7 +432,6 @@
                     continue;
                 }
 
-                // تسمية لغة ثم كود (مثل: HTML ثم وسم <script>...)
                 if (isLanguageLabel(trimmed) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1])) {
                     const lang = trimmed;
                     i++;
@@ -475,12 +445,10 @@
                         segments.push({ type: 'code', lang, content: codeLines.join('\n') });
                         continue;
                     }
-                    // لو مفيش كود، اعتبر التسمية نص عادي
                     segments.push({ type: 'prose', content: lang });
                     continue;
                 }
 
-                // كتلة HTML/Script بدون سياج
                 if (/^\s*(<!--|<!DOCTYPE\b|<(script|style|html|head|body|div|pre|code)\b)/i.test(line)) {
                     const codeLines = [];
                     while (i < lines.length && !isProseLine(lines[i])) {
@@ -492,7 +460,6 @@
                     continue;
                 }
 
-                // نص عادي — اجمع حتى كود قادم
                 const proseLines = [];
                 while (i < lines.length) {
                     const next = lines[i];
@@ -507,7 +474,6 @@
                     segments.push({ type: 'prose', content: proseLines.join('\n') });
                 }
 
-                // حماية من التجمّد: لو السطر الحالي متعالجش، خده كنص وامشي
                 if (i === startI) {
                     segments.push({ type: 'prose', content: line });
                     i++;
@@ -554,9 +520,18 @@
                 .join('');
         }
 
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.innerText = msg;
+            toast.style.display = 'block';
+            setTimeout(function () { toast.style.display = 'none'; }, 2000);
+        }
+
         function processText() {
             const inputEl = document.getElementById('inputText');
             const outputBox = document.getElementById('outputText');
+            if (!outputBox) return;
             const input = inputEl ? inputEl.value : '';
 
             if (!input.trim()) {
@@ -567,7 +542,7 @@
             try {
                 const segments = tokenizeMixedContent(input);
                 let htmlOutput = '';
-                segments.forEach(seg => {
+                segments.forEach(function (seg) {
                     if (seg.type === 'code') htmlOutput += renderCodeBlock(seg.lang, seg.content);
                     else htmlOutput += renderProse(seg.content);
                 });
@@ -580,21 +555,10 @@
         }
 
         function clearText() {
-            document.getElementById('inputText').value = '';
-            document.getElementById('outputText').innerHTML = '<div class="placeholder">Structured text will appear here...</div>';
-        }
-
-        function copyText() {
+            const inputEl = document.getElementById('inputText');
             const outputBox = document.getElementById('outputText');
-            if (outputBox.querySelector('.placeholder')) return;
-            const text = outputBox.innerText;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text).then(() => showToast('Text Copied!')).catch(() => {
-                    fallbackCopy(text);
-                });
-            } else {
-                fallbackCopy(text);
-            }
+            if (inputEl) inputEl.value = '';
+            if (outputBox) outputBox.innerHTML = '<div class="placeholder">Structured text will appear here...</div>';
         }
 
         function fallbackCopy(text) {
@@ -611,25 +575,89 @@
             document.body.removeChild(ta);
         }
 
-        function showToast(msg) {
-            const toast = document.getElementById('toast');
-            toast.innerText = msg;
-            toast.style.display = 'block';
-            setTimeout(() => { toast.style.display = 'none'; }, 2000);
+        function copyText() {
+            const outputBox = document.getElementById('outputText');
+            if (!outputBox || outputBox.querySelector('.placeholder')) return;
+            const text = outputBox.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function () {
+                    showToast('Text Copied!');
+                }).catch(function () {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
         }
 
-        document.getElementById('processBtn').addEventListener('click', processText);
-        document.getElementById('clearBtn').addEventListener('click', clearText);
-        document.getElementById('copyBtn').addEventListener('click', copyText);
-    </script>
+        // Optional panel resizer — isolated so failures never break Process Text
+        (function initResizer() {
+            try {
+                const resizer = document.getElementById('dragMe');
+                const leftPanel = document.getElementById('leftPanel');
+                const workspace = document.getElementById('workspace');
+                if (!resizer || !leftPanel || !workspace) return;
 
-    <!-- Google tag (gtag.js) — loaded last so network blocks do not affect the app -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQGTBTJK2H"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-DQGTBTJK2H');
+                let isDragging = false;
+
+                resizer.addEventListener('mousedown', function (e) {
+                    isDragging = true;
+                    resizer.classList.add('active');
+                    document.body.style.cursor = 'col-resize';
+                    document.body.style.userSelect = 'none';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', function (e) {
+                    if (!isDragging) return;
+                    const containerRect = workspace.getBoundingClientRect();
+                    let newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+                    if (newWidthPercent < 20) newWidthPercent = 20;
+                    if (newWidthPercent > 75) newWidthPercent = 75;
+                    leftPanel.style.width = newWidthPercent + '%';
+                });
+
+                function stopDrag() {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    resizer.classList.remove('active');
+                    document.body.style.cursor = 'default';
+                    document.body.style.userSelect = 'auto';
+                }
+
+                document.addEventListener('mouseup', stopDrag);
+                window.addEventListener('blur', stopDrag);
+            } catch (err) {
+                console.error('Resizer init failed', err);
+            }
+        })();
+
+        // Google Analytics — load after idle so blocked networks never freeze the UI
+        (function initAnalytics() {
+            var MEASUREMENT_ID = 'G-DQGTBTJK2H';
+            function loadGtag() {
+                try {
+                    window.dataLayer = window.dataLayer || [];
+                    window.gtag = window.gtag || function () { dataLayer.push(arguments); };
+                    gtag('js', new Date());
+                    gtag('config', MEASUREMENT_ID);
+
+                    var s = document.createElement('script');
+                    s.async = true;
+                    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + MEASUREMENT_ID;
+                    s.onerror = function () { /* analytics unreachable — app keeps working */ };
+                    document.head.appendChild(s);
+                } catch (err) {
+                    console.error('Analytics init failed', err);
+                }
+            }
+
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(loadGtag, { timeout: 3000 });
+            } else {
+                setTimeout(loadGtag, 1200);
+            }
+        })();
     </script>
 </body>
 </html>
