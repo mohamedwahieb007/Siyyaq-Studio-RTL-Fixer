@@ -312,16 +312,6 @@
             font-size: 14.5px;
         }
     </style>
-
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQGTBTJK2H"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-DQGTBTJK2H');
-    </script>
 </head>
 <body>
 
@@ -340,7 +330,7 @@
                 </div>
             </div>
             <div>
-                <button class="btn-primary" onclick="processText()" aria-label="Process and format the input text">Process Text</button>
+                <button type="button" class="btn-primary" id="processBtn" aria-label="Process and format the input text">Process Text</button>
             </div>
         </header>
 
@@ -350,7 +340,7 @@
                 <div class="panel-header">Raw Input</div>
                 <textarea id="inputText" aria-label="Input mixed text box" placeholder="Paste mixed Arabic/English text here. Code blocks stay as-is in place..."></textarea>
                 <div class="actions">
-                    <button onclick="clearText()" aria-label="Clear input text">Clear Input</button>
+                    <button type="button" id="clearBtn" aria-label="Clear input text">Clear Input</button>
                 </div>
             </section>
 
@@ -364,7 +354,7 @@
                 <div class="panel-header">
                     <span>Organized Output</span>
                     <div style="display: flex; gap: 8px;">
-                        <button style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
+                        <button type="button" id="copyBtn" style="padding: 4px 10px;" aria-label="Copy organized text">Copy Text</button>
                     </div>
                 </div>
                 <div id="outputText" class="output-box" aria-live="polite">
@@ -424,19 +414,18 @@
 
         function looksLikeCodeLine(line) {
             const t = line.trim();
-            if (!t) return true; // فراغ داخل كتلة كود
+            if (!t) return false;
             if (/^(```|~~~)/.test(t)) return true;
             if (/^(<!--|<!DOCTYPE|<\/?[a-zA-Z][\w:-]*)/i.test(t)) return true;
             if (/^[{}\[\]();]+$/.test(t)) return true;
-            if (/^(function|const|let|var|import|export|class|return|if|else|for|while)\b/.test(t)) return true;
-            if (/[{};=<>]|=>|<\/?[a-zA-Z]/.test(t) && !/[\u0600-\u06FF]/.test(t)) return true;
+            if (/^(function|const|let|var|import|export|class|return|if|else|for|while|package)\b/.test(t)) return true;
+            if (/[{};]|=>|<\/?[a-zA-Z]/.test(t) && !/[\u0600-\u06FF]/.test(t)) return true;
             return false;
         }
 
         function isProseLine(line) {
             const t = line.trim();
             if (!t) return false;
-            // سطر عربي/نثري بدون علامات كود واضحة
             if (/[\u0600-\u06FF]/.test(t) && !/^(<!--|<\/?[a-zA-Z]|`{3}|~{3})/.test(t)) return true;
             if (/^[A-Za-z].*[.!?]$/.test(t) && !looksLikeCodeLine(t) && t.split(/\s+/).length > 4) return true;
             return false;
@@ -447,16 +436,17 @@
         }
 
         function tokenizeMixedContent(input) {
-            const lines = input.split('\n');
+            const lines = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
             const segments = [];
             let i = 0;
 
             while (i < lines.length) {
+                const startI = i;
                 const line = lines[i];
                 const trimmed = line.trim();
 
                 // كتلة ``` أو ~~~
-                const fenceMatch = trimmed.match(/^(```|~~~)([^\s`]*)?\s*$/);
+                const fenceMatch = trimmed.match(/^(```|~~~)(\S*)\s*$/);
                 if (fenceMatch) {
                     const fence = fenceMatch[1];
                     const lang = fenceMatch[2] || '';
@@ -466,13 +456,13 @@
                         codeLines.push(lines[i]);
                         i++;
                     }
-                    if (i < lines.length) i++; // إغلاق السياج
+                    if (i < lines.length) i++;
                     segments.push({ type: 'code', lang, content: codeLines.join('\n') });
                     continue;
                 }
 
                 // تسمية لغة ثم كود (مثل: HTML ثم وسم <script>...)
-                if (isLanguageLabel(trimmed) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1]) && !isProseLine(lines[i + 1])) {
+                if (isLanguageLabel(trimmed) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1])) {
                     const lang = trimmed;
                     i++;
                     const codeLines = [];
@@ -480,12 +470,14 @@
                         codeLines.push(lines[i]);
                         i++;
                     }
-                    // إزالة أسطر فارغة زائدة في النهاية
                     while (codeLines.length && codeLines[codeLines.length - 1].trim() === '') codeLines.pop();
                     if (codeLines.length) {
                         segments.push({ type: 'code', lang, content: codeLines.join('\n') });
                         continue;
                     }
+                    // لو مفيش كود، اعتبر التسمية نص عادي
+                    segments.push({ type: 'prose', content: lang });
+                    continue;
                 }
 
                 // كتلة HTML/Script بدون سياج
@@ -505,14 +497,20 @@
                 while (i < lines.length) {
                     const next = lines[i];
                     const nextTrim = next.trim();
-                    if (/^(```|~~~)/.test(nextTrim)) break;
-                    if (isLanguageLabel(nextTrim) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1]) && !isProseLine(lines[i + 1])) break;
+                    if (/^(```|~~~)\S*\s*$/.test(nextTrim)) break;
+                    if (isLanguageLabel(nextTrim) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1])) break;
                     if (/^\s*(<!--|<!DOCTYPE\b|<(script|style|html|head|body)\b)/i.test(next)) break;
                     proseLines.push(next);
                     i++;
                 }
                 if (proseLines.length) {
                     segments.push({ type: 'prose', content: proseLines.join('\n') });
+                }
+
+                // حماية من التجمّد: لو السطر الحالي متعالجش، خده كنص وامشي
+                if (i === startI) {
+                    segments.push({ type: 'prose', content: line });
+                    i++;
                 }
             }
 
@@ -538,39 +536,47 @@
             const paragraphs = content.split(/\n{2,}/);
             let html = '';
             paragraphs.forEach(block => {
-                const lines = block.split('\n').map(l => l.trimEnd()).filter((l, idx, arr) => {
-                    // احتفظ بالأسطر ذات المحتوى؛ اسمح بأسطر فارغة داخل الفقرة فقط إن لزم
-                    return l.trim() !== '' || (idx > 0 && idx < arr.length - 1);
-                });
-                const nonEmpty = lines.filter(l => l.trim() !== '');
+                const nonEmpty = block.split('\n').map(l => l.trim()).filter(Boolean);
                 if (!nonEmpty.length) return;
                 nonEmpty.forEach(line => {
-                    html += `<p>${formatInlineCode(line.trim())}</p>`;
+                    html += `<p>${formatInlineCode(line)}</p>`;
                 });
             });
             return html;
         }
 
+        function fallbackFormat(input) {
+            const formatted = applyRtlMarks(input);
+            return formatted
+                .split('\n')
+                .filter(p => p.trim() !== '')
+                .map(p => `<p>${escapeHtml(p)}</p>`)
+                .join('');
+        }
+
         function processText() {
-            const input = document.getElementById('inputText').value;
+            const inputEl = document.getElementById('inputText');
             const outputBox = document.getElementById('outputText');
+            const input = inputEl ? inputEl.value : '';
 
             if (!input.trim()) {
                 outputBox.innerHTML = '<div class="placeholder">Please insert text first...</div>';
                 return;
             }
 
-            const segments = tokenizeMixedContent(input);
-            let htmlOutput = '';
-            segments.forEach(seg => {
-                if (seg.type === 'code') {
-                    htmlOutput += renderCodeBlock(seg.lang, seg.content);
-                } else {
-                    htmlOutput += renderProse(seg.content);
-                }
-            });
-
-            outputBox.innerHTML = htmlOutput || '<div class="placeholder">Structured text will appear here...</div>';
+            try {
+                const segments = tokenizeMixedContent(input);
+                let htmlOutput = '';
+                segments.forEach(seg => {
+                    if (seg.type === 'code') htmlOutput += renderCodeBlock(seg.lang, seg.content);
+                    else htmlOutput += renderProse(seg.content);
+                });
+                outputBox.innerHTML = htmlOutput || fallbackFormat(input);
+            } catch (err) {
+                console.error(err);
+                outputBox.innerHTML = fallbackFormat(input);
+                showToast('Processed with basic formatter');
+            }
         }
 
         function clearText() {
@@ -580,16 +586,50 @@
 
         function copyText() {
             const outputBox = document.getElementById('outputText');
-            if(outputBox.querySelector('.placeholder')) return;
-            navigator.clipboard.writeText(outputBox.innerText).then(() => showToast("Text Copied!"));
+            if (outputBox.querySelector('.placeholder')) return;
+            const text = outputBox.innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => showToast('Text Copied!')).catch(() => {
+                    fallbackCopy(text);
+                });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            try {
+                document.execCommand('copy');
+                showToast('Text Copied!');
+            } catch (e) {
+                showToast('Copy failed');
+            }
+            document.body.removeChild(ta);
         }
 
         function showToast(msg) {
-            const toast = document.getElementById("toast");
+            const toast = document.getElementById('toast');
             toast.innerText = msg;
-            toast.style.display = "block";
-            setTimeout(() => { toast.style.display = "none"; }, 2000);
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2000);
         }
+
+        document.getElementById('processBtn').addEventListener('click', processText);
+        document.getElementById('clearBtn').addEventListener('click', clearText);
+        document.getElementById('copyBtn').addEventListener('click', copyText);
+    </script>
+
+    <!-- Google tag (gtag.js) — loaded last so network blocks do not affect the app -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DQGTBTJK2H"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-DQGTBTJK2H');
     </script>
 </body>
 </html>
