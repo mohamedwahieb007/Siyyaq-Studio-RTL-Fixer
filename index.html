@@ -357,30 +357,58 @@
             font-size: 14.5px;
         }
 
-        .metrics-bar {
-            display: flex;
-            flex-wrap: wrap;
+        .metrics-panel {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
             gap: 8px;
-            margin-bottom: 10px;
-        }
-
-        .metric-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: #f5f5f7;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            background: linear-gradient(180deg, #fafafa 0%, #f5f5f7 100%);
             border: 1px solid var(--border-color);
-            border-radius: 999px;
-            padding: 5px 11px;
-            font-size: 11.5px;
-            color: var(--text-muted);
-            line-height: 1.2;
+            border-radius: 10px;
         }
 
-        .metric-chip strong {
-            color: var(--text-main);
+        .metric-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+            min-width: 0;
+            padding: 8px 6px;
+            background: #ffffff;
+            border: 1px solid #ececf1;
+            border-radius: 8px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+
+        .metric-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.55px;
+            color: var(--text-muted);
             font-weight: 600;
-            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .metric-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.1;
+        }
+
+        @media (max-width: 900px) {
+            .metrics-panel {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 520px) {
+            .metrics-panel {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         .output-box.preset-report {
@@ -457,11 +485,27 @@
             <!-- Left Panel (Raw Input) -->
             <section class="panel left-panel" id="leftPanel" aria-label="Raw Input Section">
                 <div class="panel-header">Raw Input</div>
-                <div class="metrics-bar" id="metricsBar" aria-live="polite">
-                    <span class="metric-chip">Words <strong id="metricWords">0</strong></span>
-                    <span class="metric-chip">Lines <strong id="metricLines">0</strong></span>
-                    <span class="metric-chip">Bytes <strong id="metricBytes">0</strong></span>
-                    <span class="metric-chip">Read <strong id="metricRead">—</strong></span>
+                <div class="metrics-panel" id="metricsBar" aria-live="polite">
+                    <div class="metric-item">
+                        <span class="metric-label">Words</span>
+                        <span class="metric-value" id="metricWords">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Chars</span>
+                        <span class="metric-value" id="metricChars">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Lines</span>
+                        <span class="metric-value" id="metricLines">0</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Size</span>
+                        <span class="metric-value" id="metricBytes">0 B</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Read</span>
+                        <span class="metric-value" id="metricRead">—</span>
+                    </div>
                 </div>
                 <textarea id="inputText" aria-label="Input mixed text box" placeholder="Paste mixed Arabic/English text here. Code blocks stay as-is in place..." oninput="updateMetrics()"></textarea>
                 <div class="actions">
@@ -544,6 +588,14 @@
             return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n').length;
         }
 
+        function countChars(text) {
+            return text.length;
+        }
+
+        function countCharsNoSpaces(text) {
+            return text.replace(/\s/g, '').length;
+        }
+
         function byteSize(text) {
             try {
                 return new TextEncoder().encode(text).length;
@@ -573,15 +625,22 @@
             var inputEl = document.getElementById('inputText');
             var text = inputEl ? inputEl.value : '';
             var words = countWords(text);
+            var chars = countChars(text);
+            var charsNoSpaces = countCharsNoSpaces(text);
             var lines = countLines(text);
             var bytes = byteSize(text);
 
             var wordsEl = document.getElementById('metricWords');
+            var charsEl = document.getElementById('metricChars');
             var linesEl = document.getElementById('metricLines');
             var bytesEl = document.getElementById('metricBytes');
             var readEl = document.getElementById('metricRead');
 
             if (wordsEl) wordsEl.textContent = words.toLocaleString();
+            if (charsEl) {
+                charsEl.textContent = chars.toLocaleString();
+                charsEl.title = 'With spaces: ' + chars.toLocaleString() + ' | Without spaces: ' + charsNoSpaces.toLocaleString();
+            }
             if (linesEl) linesEl.textContent = lines.toLocaleString();
             if (bytesEl) bytesEl.textContent = formatBytes(bytes);
             if (readEl) readEl.textContent = estimateReadingTime(words, text);
