@@ -309,9 +309,27 @@
             font-size: 15.5px;
             line-height: 1.85;
             direction: rtl;
-            text-align: right;
+            text-align: justify;
+            text-align-last: right;
             box-shadow: var(--inset-shadow);
             white-space: pre-wrap;
+        }
+
+        .output-box[data-dir="rtl"],
+        .output-box:not([data-dir]) {
+            direction: rtl;
+            text-align: justify;
+            text-align-last: right;
+        }
+
+        .output-box[data-dir="ltr"] {
+            direction: ltr;
+            text-align: justify;
+            text-align-last: left;
+        }
+
+        .dir-select {
+            min-width: 92px;
         }
 
         .output-box[data-font="cairo"],
@@ -704,6 +722,11 @@
                 <div class="panel-header output-panel-header">
                     <span>Organized Output</span>
                     <div class="output-header-controls">
+                        <label class="control-label" for="dirSelect">Dir</label>
+                        <select id="dirSelect" class="preset-select dir-select" aria-label="Output text direction" onchange="onDirectionChange()">
+                            <option value="rtl" selected>RTL</option>
+                            <option value="ltr">LTR</option>
+                        </select>
                         <label class="control-label" for="fontSelect">Font</label>
                         <select id="fontSelect" class="preset-select font-select" aria-label="Output font" onchange="onFontChange()">
                             <option value="cairo" selected>Cairo — Balanced</option>
@@ -721,7 +744,7 @@
                         <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
                     </div>
                 </div>
-                <div id="outputText" class="output-box" data-font="cairo" aria-live="polite">
+                <div id="outputText" class="output-box" data-font="cairo" data-dir="rtl" aria-live="polite">
                     <div class="placeholder">Structured text will appear here...</div>
                 </div>
             </section>
@@ -930,11 +953,56 @@
 
         function applyOutputPresetClass(outputBox, preset) {
             var fontKey = outputBox.getAttribute('data-font') || 'cairo';
+            var dirKey = outputBox.getAttribute('data-dir') || 'rtl';
             outputBox.className = 'output-box';
+            if (outputEditMode) outputBox.classList.add('is-editing');
             outputBox.setAttribute('data-font', fontKey);
+            outputBox.setAttribute('data-dir', dirKey);
             if (preset && preset !== 'default') {
                 outputBox.classList.add('preset-' + preset);
             }
+        }
+
+        function getOutputDirection() {
+            var select = document.getElementById('dirSelect');
+            var outputBox = document.getElementById('outputText');
+            if (select && (select.value === 'rtl' || select.value === 'ltr')) return select.value;
+            if (outputBox && outputBox.getAttribute('data-dir') === 'ltr') return 'ltr';
+            return 'rtl';
+        }
+
+        function applyOutputDirection(dirKey) {
+            if (dirKey !== 'ltr' && dirKey !== 'rtl') dirKey = 'rtl';
+            var outputBox = document.getElementById('outputText');
+            if (outputBox) {
+                outputBox.setAttribute('data-dir', dirKey);
+                outputBox.setAttribute('dir', dirKey);
+            }
+            try {
+                localStorage.setItem('outputDir', dirKey);
+            } catch (e) {}
+        }
+
+        function onDirectionChange() {
+            var select = document.getElementById('dirSelect');
+            var dirKey = select ? select.value : 'rtl';
+            applyOutputDirection(dirKey);
+
+            var inputEl = document.getElementById('inputText');
+            if (inputEl && inputEl.value.trim() && hasOutputContent()) {
+                processText();
+            }
+        }
+
+        function initOutputDirection() {
+            var saved = 'rtl';
+            try {
+                saved = localStorage.getItem('outputDir') || 'rtl';
+            } catch (e) {}
+            if (saved !== 'ltr' && saved !== 'rtl') saved = 'rtl';
+            var select = document.getElementById('dirSelect');
+            if (select) select.value = saved;
+            applyOutputDirection(saved);
         }
 
         var OUTPUT_FONTS = {
@@ -1100,11 +1168,12 @@
 
         function formatInlineCode(text) {
             const parts = text.split(/(`[^`\n]+`)/g);
+            const isRtl = getOutputDirection() !== 'ltr';
             return parts.map(part => {
                 if (part.length >= 2 && part.startsWith('`') && part.endsWith('`')) {
                     return `<code class="inline-code">${escapeHtml(part.slice(1, -1))}</code>`;
                 }
-                return escapeHtml(applyRtlMarks(part));
+                return escapeHtml(isRtl ? applyRtlMarks(part) : part);
             }).join('');
         }
 
@@ -1142,7 +1211,7 @@
         }
 
         function fallbackFormat(input) {
-            const formatted = applyRtlMarks(input);
+            const formatted = getOutputDirection() === 'ltr' ? input : applyRtlMarks(input);
             return formatted
                 .split('\n')
                 .filter(p => p.trim() !== '')
@@ -1289,6 +1358,7 @@
         updateMetrics();
         applyTheme(getTheme());
         initOutputFont();
+        initOutputDirection();
         initOutputEdit();
 
         // Google Analytics — load after idle so blocked networks never freeze the UI
