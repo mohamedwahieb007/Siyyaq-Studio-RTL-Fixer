@@ -298,12 +298,40 @@
         /* تعديل طفيف لحجم الخط والمسافات لعرض كلام أكثر بدون سكرول مبالغ فيه */
         .output-box {
             font-family: 'Cairo', sans-serif;
-            font-size: 15.5px; /* تم تصغيره بشكل طفيف جداً وذكي */
-            line-height: 1.85; /* مسافة مريحة للعين وبنفس الوقت توفر مساحة طولية */
+            font-size: 15.5px;
+            line-height: 1.85;
             direction: rtl;
             text-align: right;
             box-shadow: var(--inset-shadow);
             white-space: pre-wrap;
+        }
+
+        .output-box[data-font="cairo"],
+        .output-box:not([data-font]) { font-family: 'Cairo', sans-serif; }
+        .output-box[data-font="tajawal"] { font-family: 'Tajawal', sans-serif; }
+        .output-box[data-font="almarai"] { font-family: 'Almarai', sans-serif; }
+        .output-box[data-font="noto"] { font-family: 'Noto Sans Arabic', sans-serif; }
+        .output-box[data-font="ibm"] { font-family: 'IBM Plex Sans Arabic', sans-serif; }
+        .output-box[data-font="readex"] { font-family: 'Readex Pro', sans-serif; }
+        .output-box[data-font="amiri"] { font-family: 'Amiri', serif; }
+        .output-box[data-font="elmessiri"] { font-family: 'El Messiri', sans-serif; }
+        .output-box[data-font="changa"] { font-family: 'Changa', sans-serif; }
+        .output-box[data-font="markazi"] { font-family: 'Markazi Text', serif; }
+
+        .output-panel-header {
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .output-header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .font-select {
+            min-width: 158px;
         }
 
         .output-box p {
@@ -628,13 +656,26 @@
 
             <!-- Right Panel (Organized Output) -->
             <section class="panel right-panel" aria-label="Organized Output Section">
-                <div class="panel-header">
+                <div class="panel-header output-panel-header">
                     <span>Organized Output</span>
-                    <div style="display: flex; gap: 8px;">
+                    <div class="output-header-controls">
+                        <label class="control-label" for="fontSelect">Font</label>
+                        <select id="fontSelect" class="preset-select font-select" aria-label="Output font" onchange="onFontChange()">
+                            <option value="cairo" selected>Cairo — Balanced</option>
+                            <option value="tajawal">Tajawal — Modern</option>
+                            <option value="almarai">Almarai — Corporate</option>
+                            <option value="noto">Noto Sans — Universal</option>
+                            <option value="ibm">IBM Plex — Technical</option>
+                            <option value="readex">Readex Pro — Bilingual</option>
+                            <option value="amiri">Amiri — Formal Report</option>
+                            <option value="elmessiri">El Messiri — Elegant</option>
+                            <option value="changa">Changa — Bold Social</option>
+                            <option value="markazi">Markazi Text — Classic</option>
+                        </select>
                         <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
                     </div>
                 </div>
-                <div id="outputText" class="output-box" aria-live="polite">
+                <div id="outputText" class="output-box" data-font="cairo" aria-live="polite">
                     <div class="placeholder">Structured text will appear here...</div>
                 </div>
             </section>
@@ -782,10 +823,62 @@
         }
 
         function applyOutputPresetClass(outputBox, preset) {
+            var fontKey = outputBox.getAttribute('data-font') || 'cairo';
             outputBox.className = 'output-box';
+            outputBox.setAttribute('data-font', fontKey);
             if (preset && preset !== 'default') {
                 outputBox.classList.add('preset-' + preset);
             }
+        }
+
+        var OUTPUT_FONTS = {
+            cairo: { google: 'Cairo:wght@400;500;600;700' },
+            tajawal: { google: 'Tajawal:wght@400;500;700' },
+            almarai: { google: 'Almarai:wght@300;400;700;800' },
+            noto: { google: 'Noto+Sans+Arabic:wght@400;500;600;700' },
+            ibm: { google: 'IBM+Plex+Sans+Arabic:wght@400;500;600;700' },
+            readex: { google: 'Readex+Pro:wght@400;500;600;700' },
+            amiri: { google: 'Amiri:wght@400;700' },
+            elmessiri: { google: 'El+Messiri:wght@400;500;600;700' },
+            changa: { google: 'Changa:wght@400;500;600;700' },
+            markazi: { google: 'Markazi+Text:wght@400;500;600;700' }
+        };
+
+        var loadedOutputFonts = { cairo: true };
+
+        function loadOutputFont(fontKey) {
+            if (!OUTPUT_FONTS[fontKey] || loadedOutputFonts[fontKey]) return;
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=' + OUTPUT_FONTS[fontKey].google + '&display=swap';
+            document.head.appendChild(link);
+            loadedOutputFonts[fontKey] = true;
+        }
+
+        function applyOutputFont(fontKey) {
+            if (!OUTPUT_FONTS[fontKey]) fontKey = 'cairo';
+            loadOutputFont(fontKey);
+            var outputBox = document.getElementById('outputText');
+            if (outputBox) outputBox.setAttribute('data-font', fontKey);
+            try {
+                localStorage.setItem('outputFont', fontKey);
+            } catch (e) {}
+        }
+
+        function onFontChange() {
+            var select = document.getElementById('fontSelect');
+            applyOutputFont(select ? select.value : 'cairo');
+        }
+
+        function initOutputFont() {
+            var saved = 'cairo';
+            try {
+                saved = localStorage.getItem('outputFont') || 'cairo';
+            } catch (e) {}
+            if (!OUTPUT_FONTS[saved]) saved = 'cairo';
+            var select = document.getElementById('fontSelect');
+            if (select) select.value = saved;
+            applyOutputFont(saved);
         }
 
         function escapeHtml(str) {
@@ -1081,6 +1174,7 @@
 
         updateMetrics();
         applyTheme(getTheme());
+        initOutputFont();
 
         // Google Analytics — load after idle so blocked networks never freeze the UI
         (function initAnalytics() {
