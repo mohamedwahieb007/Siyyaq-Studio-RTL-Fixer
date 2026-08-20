@@ -342,6 +342,26 @@
             min-width: 158px;
         }
 
+        .output-box.is-editing {
+            cursor: text;
+            outline: 2px solid var(--apple-blue);
+            outline-offset: -2px;
+            box-shadow: var(--inset-shadow), 0 0 0 3px var(--focus-ring);
+        }
+
+        .output-box.is-editing .code-block {
+            opacity: 0.92;
+        }
+
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        button:disabled:hover {
+            background: var(--button-bg);
+        }
+
         .output-box p {
             margin-top: 0;
             margin-bottom: 10px;
@@ -697,6 +717,7 @@
                             <option value="changa">Changa — Bold Social</option>
                             <option value="markazi">Markazi Text — Classic</option>
                         </select>
+                        <button type="button" id="editOutputBtn" style="padding: 4px 10px;" onclick="toggleOutputEdit()" aria-label="Edit organized output" disabled>Edit</button>
                         <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
                     </div>
                 </div>
@@ -712,6 +733,66 @@
     <script>
         // App functions first so onclick handlers always work even if later setup fails
         var currentPreset = 'default';
+        var outputEditMode = false;
+
+        function hasOutputContent() {
+            var outputBox = document.getElementById('outputText');
+            return outputBox && !outputBox.querySelector('.placeholder');
+        }
+
+        function updateEditButtonState() {
+            var editBtn = document.getElementById('editOutputBtn');
+            if (!editBtn) return;
+            editBtn.disabled = !hasOutputContent();
+        }
+
+        function setOutputEditMode(enabled) {
+            var outputBox = document.getElementById('outputText');
+            var editBtn = document.getElementById('editOutputBtn');
+            if (!outputBox) return;
+
+            if (enabled && !hasOutputContent()) {
+                showToast('Process text first');
+                return;
+            }
+
+            outputEditMode = enabled;
+
+            if (enabled) {
+                outputBox.setAttribute('contenteditable', 'true');
+                outputBox.classList.add('is-editing');
+                if (editBtn) {
+                    editBtn.textContent = 'Done';
+                    editBtn.setAttribute('aria-label', 'Finish editing output');
+                }
+                outputBox.focus();
+            } else {
+                outputBox.removeAttribute('contenteditable');
+                outputBox.classList.remove('is-editing');
+                if (editBtn) {
+                    editBtn.textContent = 'Edit';
+                    editBtn.setAttribute('aria-label', 'Edit organized output');
+                }
+            }
+        }
+
+        function toggleOutputEdit() {
+            setOutputEditMode(!outputEditMode);
+        }
+
+        function initOutputEdit() {
+            var outputBox = document.getElementById('outputText');
+            if (!outputBox) return;
+
+            outputBox.addEventListener('paste', function (e) {
+                if (!outputEditMode) return;
+                e.preventDefault();
+                var text = (e.clipboardData || window.clipboardData).getData('text/plain');
+                document.execCommand('insertText', false, text);
+            });
+
+            updateEditButtonState();
+        }
 
         function getTheme() {
             return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
@@ -1081,6 +1162,9 @@
             const inputEl = document.getElementById('inputText');
             const outputBox = document.getElementById('outputText');
             if (!outputBox) return;
+
+            setOutputEditMode(false);
+
             const input = inputEl ? inputEl.value : '';
             const preset = getPreset();
             currentPreset = preset;
@@ -1090,6 +1174,7 @@
             if (!input.trim()) {
                 applyOutputPresetClass(outputBox, 'default');
                 outputBox.innerHTML = '<div class="placeholder">Please insert text first...</div>';
+                updateEditButtonState();
                 return;
             }
 
@@ -1113,17 +1198,21 @@
                 outputBox.innerHTML = fallbackFormat(processedInput);
                 showToast('Processed with basic formatter');
             }
+
+            updateEditButtonState();
         }
 
         function clearText() {
             const inputEl = document.getElementById('inputText');
             const outputBox = document.getElementById('outputText');
+            setOutputEditMode(false);
             if (inputEl) inputEl.value = '';
             if (outputBox) {
                 applyOutputPresetClass(outputBox, 'default');
                 outputBox.innerHTML = '<div class="placeholder">Structured text will appear here...</div>';
             }
             updateMetrics();
+            updateEditButtonState();
         }
 
         function fallbackCopy(text) {
@@ -1200,6 +1289,7 @@
         updateMetrics();
         applyTheme(getTheme());
         initOutputFont();
+        initOutputEdit();
 
         // Google Analytics — load after idle so blocked networks never freeze the UI
         (function initAnalytics() {
