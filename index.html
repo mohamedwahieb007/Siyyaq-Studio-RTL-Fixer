@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Siyyaq Studio | Advanced RTL Formatter</title>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
-    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <title>Siyyaq Studio | Text Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Outfit:wght@500;600;700&display=swap" rel="stylesheet"></noscript>
     <style>
         :root {
             --bg-color: #f5f5f7;
@@ -47,6 +47,8 @@
             --theme-toggle-hover-bg: #dcdce1;
             --theme-toggle-icon: #0066cc;
             --theme-toggle-border: #c7c7cc;
+            --font-ui: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-brand: 'Outfit', 'Manrope', sans-serif;
         }
 
         [data-theme="dark"] {
@@ -93,7 +95,7 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Icons", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-family: var(--font-ui);
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
@@ -103,6 +105,8 @@
             height: 100vh;
             box-sizing: border-box;
             overflow: hidden;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
         .app-container {
@@ -140,10 +144,11 @@
         }
 
         .control-label {
+            font-family: var(--font-ui);
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.6px;
+            letter-spacing: 0.7px;
             color: var(--text-muted);
             white-space: nowrap;
         }
@@ -202,15 +207,19 @@
 
         .header-title h1 {
             margin: 0;
-            font-size: 17px;
-            font-weight: 600;
-            letter-spacing: -0.3px;
+            font-family: var(--font-brand);
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.45px;
             color: var(--text-main);
         }
 
         .header-title p {
-            margin: 1px 0 0;
-            font-size: 12px;
+            margin: 2px 0 0;
+            font-family: var(--font-ui);
+            font-size: 12.5px;
+            font-weight: 500;
+            letter-spacing: -0.1px;
             color: var(--text-muted);
         }
 
@@ -266,11 +275,12 @@
         }
 
         .panel-header {
+            font-family: var(--font-ui);
             font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 1px;
             color: var(--text-muted);
-            font-weight: 600;
+            font-weight: 700;
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
@@ -430,9 +440,9 @@
 
         .output-box .code-lang {
             display: block;
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+            font-family: var(--font-ui);
             font-size: 11px;
-            font-weight: 600;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.6px;
             color: var(--text-muted);
@@ -661,7 +671,7 @@
                 </div>
                 <div class="header-title">
                     <h1>Siyyaq Studio</h1>
-                    <p>The Ultimate RTL Text & Code Formatter</p>
+                    <p>From messy paste to polished output</p>
                 </div>
             </div>
             <div class="header-actions">
