@@ -49,6 +49,9 @@
             --theme-toggle-border: #c7c7cc;
             --font-ui: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
             --font-brand: 'Outfit', 'Manrope', sans-serif;
+            --out-font-size: 15.5px;
+            --out-line-height: 1.85;
+            --out-para-gap: 10px;
         }
 
         [data-theme="dark"] {
@@ -94,6 +97,10 @@
             --theme-toggle-border: #545456;
         }
 
+        html, body {
+            height: 100%;
+        }
+
         body {
             font-family: var(--font-ui);
             background-color: var(--bg-color);
@@ -102,7 +109,10 @@
             padding: 16px;
             display: flex;
             justify-content: center;
+            min-height: 100vh;
+            min-height: 100dvh;
             height: 100vh;
+            height: 100dvh;
             box-sizing: border-box;
             overflow: hidden;
             -webkit-font-smoothing: antialiased;
@@ -113,6 +123,7 @@
             width: 100%;
             max-width: 1550px;
             height: 100%;
+            max-height: 100%;
             background: var(--surface-color);
             backdrop-filter: blur(30px);
             -webkit-backdrop-filter: blur(30px);
@@ -122,6 +133,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            min-width: 0;
         }
 
         /* تحسين الهيدر واللوجو الاحترافي */
@@ -227,6 +239,7 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+            min-height: 0;
         }
 
         .panel {
@@ -236,6 +249,8 @@
             background: var(--panel-bg);
             height: 100%;
             box-sizing: border-box;
+            min-width: 0;
+            min-height: 0;
         }
 
         /* النسبة الدقيقة (32% لليسار، 68% لليمين) */
@@ -246,7 +261,7 @@
 
         .right-panel {
             flex: 1;
-            min-width: 320px;
+            min-width: 280px;
         }
 
         /* المُحجّم (Slider) */
@@ -313,16 +328,18 @@
             box-shadow: 0 0 0 3px var(--focus-ring);
         }
 
-        /* تعديل طفيف لحجم الخط والمسافات لعرض كلام أكثر بدون سكرول مبالغ فيه */
         .output-box {
             font-family: 'Cairo', sans-serif;
-            font-size: 15.5px;
-            line-height: 1.85;
+            font-size: var(--out-font-size);
+            line-height: var(--out-line-height);
             direction: rtl;
             text-align: justify;
             text-align-last: right;
             box-shadow: var(--inset-shadow);
-            white-space: pre-wrap;
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            hyphens: none;
         }
 
         .output-box[data-dir="rtl"],
@@ -370,6 +387,48 @@
             min-width: 158px;
         }
 
+        .copy-select {
+            min-width: 120px;
+        }
+
+        .output-style-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 14px;
+            margin-bottom: 10px;
+            padding: 10px 12px;
+            background: var(--metrics-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+        }
+
+        .style-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .style-control .control-label {
+            min-width: 34px;
+        }
+
+        .style-control input[type="range"] {
+            width: 96px;
+            max-width: 22vw;
+            accent-color: var(--apple-blue);
+            cursor: pointer;
+        }
+
+        .style-value {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+            min-width: 34px;
+        }
+
         .output-box.is-editing {
             cursor: text;
             outline: 2px solid var(--apple-blue);
@@ -392,11 +451,18 @@
 
         .output-box p {
             margin-top: 0;
-            margin-bottom: 10px;
-            padding-bottom: 6px;
+            margin-bottom: var(--out-para-gap);
+            padding-bottom: calc(var(--out-para-gap) * 0.45);
             border-bottom: 1px solid var(--paragraph-border);
+            white-space: normal;
+            overflow-wrap: anywhere;
         }
-        .output-box p:last-child { border: none; }
+        .output-box p:last-child { border: none; margin-bottom: 0; padding-bottom: 0; }
+
+        .output-box .hashtag {
+            color: var(--apple-blue);
+            font-weight: 600;
+        }
 
         /* كود وسط النص — يُعرض كما هو LTR بدون تأثير RTL */
         .output-box .code-block {
@@ -552,57 +618,162 @@
             line-height: 1.1;
         }
 
+        @media (max-width: 1100px) {
+            .left-panel { min-width: 200px; }
+            .preset-select { min-width: 150px; }
+            .panel { padding: 14px 16px; }
+            .header { padding: 12px 18px; }
+        }
+
         @media (max-width: 900px) {
+            body {
+                height: auto;
+                min-height: 100vh;
+                min-height: 100dvh;
+                overflow: auto;
+                padding: 10px;
+                align-items: stretch;
+            }
+
+            .app-container {
+                height: auto;
+                min-height: calc(100vh - 20px);
+                min-height: calc(100dvh - 20px);
+                max-height: none;
+                border-radius: 12px;
+            }
+
+            .workspace {
+                flex-direction: column;
+                overflow: visible;
+            }
+
+            .left-panel,
+            .right-panel {
+                width: 100% !important;
+                min-width: 0;
+                min-height: 280px;
+                height: auto;
+            }
+
+            .left-panel { border-bottom: 1px solid var(--border-color); }
+            .resizer { display: none; }
+
+            textarea,
+            .output-box {
+                min-height: 240px;
+                flex: 1 1 auto;
+            }
+
             .metrics-panel {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .header-actions {
+                width: 100%;
+            }
+
+            .preset-select {
+                min-width: 0;
+                flex: 1;
+            }
+
+            .btn-primary {
+                flex: 1;
+                min-width: 120px;
             }
         }
 
         @media (max-width: 520px) {
+            body { padding: 8px; }
+
+            .app-container {
+                border-radius: 10px;
+                min-height: calc(100vh - 16px);
+                min-height: calc(100dvh - 16px);
+            }
+
+            .header { padding: 10px 12px; gap: 10px; }
+            .header-title h1 { font-size: 16px; }
+            .header-title p { font-size: 11.5px; }
+            .logo-icon { width: 30px; height: 30px; border-radius: 7px; }
+
             .metrics-panel {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
+
+            .output-header-controls {
+                width: 100%;
+            }
+
+            .style-control input[type="range"] {
+                width: 72px;
+            }
+
+            .panel { padding: 12px; }
+            textarea, .output-box { min-height: 200px; }
         }
 
         .output-box.preset-report {
-            font-size: 16px;
-            line-height: 2;
+            border-right: 3px solid var(--apple-blue);
+            padding-right: 16px;
+            background:
+                linear-gradient(180deg, rgba(0, 102, 204, 0.04), transparent 120px),
+                var(--input-bg);
+        }
+
+        [data-theme="dark"] .output-box.preset-report {
+            background:
+                linear-gradient(180deg, rgba(10, 132, 255, 0.08), transparent 120px),
+                var(--input-bg);
         }
 
         .output-box.preset-report p {
-            margin-bottom: 14px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--preset-border);
+            border-bottom-style: solid;
+            border-bottom-width: 1px;
+            border-bottom-color: var(--preset-border);
+        }
+
+        .output-box.preset-report p:first-of-type {
+            font-weight: 600;
+            font-size: 1.06em;
         }
 
         .output-box.preset-social {
-            font-size: 16.5px;
-            line-height: 1.75;
+            background: var(--input-bg);
         }
 
         .output-box.preset-social p {
-            margin-bottom: 14px;
-            padding: 10px 12px;
+            margin-bottom: var(--out-para-gap);
+            padding: 12px 14px;
             border-bottom: none;
             background: var(--social-block-bg);
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1px solid var(--social-block-border);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+            text-align: start;
+            text-align-last: auto;
         }
 
         .output-box.preset-codedoc {
-            font-size: 15px;
-            line-height: 1.8;
+            font-variant-ligatures: none;
         }
 
         .output-box.preset-codedoc .code-block {
             background: var(--codedoc-code-bg);
             border-color: var(--codedoc-code-border);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+            border-left: 3px solid var(--apple-blue);
         }
 
         .output-box.preset-codedoc .inline-code {
             background: var(--codedoc-inline-bg);
             border-color: var(--codedoc-code-border);
+        }
+
+        .output-box.preset-codedoc p {
+            border-bottom: none;
+            padding-bottom: 0;
         }
 
         .theme-toggle {
@@ -750,8 +921,32 @@
                             <option value="changa">Changa — Bold Social</option>
                             <option value="markazi">Markazi Text — Classic</option>
                         </select>
+                        <label class="control-label" for="copyFormatSelect">Copy</label>
+                        <select id="copyFormatSelect" class="preset-select copy-select" aria-label="Copy format" onchange="onCopyFormatChange()">
+                            <option value="plain" selected>Plain</option>
+                            <option value="markdown">Markdown</option>
+                            <option value="html">HTML</option>
+                            <option value="whatsapp">WhatsApp</option>
+                        </select>
                         <button type="button" id="editOutputBtn" style="padding: 4px 10px;" onclick="toggleOutputEdit()" aria-label="Edit organized output" disabled>Edit</button>
-                        <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy Text</button>
+                        <button type="button" id="copyBtn" style="padding: 4px 10px;" onclick="copyText()" aria-label="Copy organized text">Copy</button>
+                    </div>
+                </div>
+                <div class="output-style-bar" aria-label="Output style controls">
+                    <div class="style-control">
+                        <label class="control-label" for="fontSizeRange">Size</label>
+                        <input type="range" id="fontSizeRange" min="13" max="22" step="0.5" value="15.5" oninput="onOutputStyleChange()">
+                        <span class="style-value" id="fontSizeValue">15.5</span>
+                    </div>
+                    <div class="style-control">
+                        <label class="control-label" for="lineHeightRange">Line</label>
+                        <input type="range" id="lineHeightRange" min="1.4" max="2.4" step="0.05" value="1.85" oninput="onOutputStyleChange()">
+                        <span class="style-value" id="lineHeightValue">1.85</span>
+                    </div>
+                    <div class="style-control">
+                        <label class="control-label" for="paraGapRange">Gap</label>
+                        <input type="range" id="paraGapRange" min="4" max="28" step="1" value="10" oninput="onOutputStyleChange()">
+                        <span class="style-value" id="paraGapValue">10</span>
                     </div>
                 </div>
                 <div id="outputText" class="output-box" data-font="cairo" data-dir="rtl" aria-live="polite">
@@ -847,6 +1042,7 @@
 
             try {
                 localStorage.setItem('theme', theme);
+                saveStudioDefaults();
             } catch (e) {}
         }
 
@@ -854,13 +1050,26 @@
             applyTheme(getTheme() === 'dark' ? 'light' : 'dark');
         }
 
+        var TEMPLATE_STYLES = {
+            default: { fontSize: 15.5, lineHeight: 1.85, paraGap: 10 },
+            report: { fontSize: 16.5, lineHeight: 2.05, paraGap: 18 },
+            social: { fontSize: 17, lineHeight: 1.7, paraGap: 12 },
+            codedoc: { fontSize: 15, lineHeight: 1.8, paraGap: 12 }
+        };
+
         var PRESETS = {
             default: {
-                preprocess: function (text) { return text; }
+                preprocess: function (text) {
+                    return text
+                        .replace(/\u00A0/g, ' ')
+                        .replace(/[ \t]+$/gm, '')
+                        .replace(/\n{3,}/g, '\n\n');
+                }
             },
             report: {
                 preprocess: function (text) {
                     return text
+                        .replace(/\u00A0/g, ' ')
                         .replace(/[ \t]+$/gm, '')
                         .replace(/\n{3,}/g, '\n\n')
                         .replace(/([.?!…])([ \t]*\n)(?!\n)/g, '$1\n\n');
@@ -869,13 +1078,17 @@
             social: {
                 preprocess: function (text) {
                     return text
+                        .replace(/\u00A0/g, ' ')
                         .replace(/[ \t]+$/gm, '')
                         .replace(/\n{3,}/g, '\n\n');
                 }
             },
             codedoc: {
                 preprocess: function (text) {
-                    return text.replace(/[ \t]+$/gm, '');
+                    return text
+                        .replace(/\u00A0/g, ' ')
+                        .replace(/[ \t]+$/gm, '')
+                        .replace(/\n{3,}/g, '\n\n');
                 }
             }
         };
@@ -887,8 +1100,20 @@
 
         function onPresetChange() {
             currentPreset = getPreset();
+            try { localStorage.setItem('outputPreset', currentPreset); } catch (e) {}
+            applyTemplateStyleDefaults(currentPreset, false);
+            saveStudioDefaults();
             var inputEl = document.getElementById('inputText');
             if (inputEl && inputEl.value.trim()) processText();
+        }
+
+        function initPreset() {
+            var saved = 'default';
+            try { saved = localStorage.getItem('outputPreset') || 'default'; } catch (e) {}
+            if (!PRESETS[saved]) saved = 'default';
+            var select = document.getElementById('presetSelect');
+            if (select) select.value = saved;
+            currentPreset = saved;
         }
 
         function countWords(text) {
@@ -990,6 +1215,7 @@
             }
             try {
                 localStorage.setItem('outputDir', dirKey);
+                saveStudioDefaults();
             } catch (e) {}
         }
 
@@ -1013,6 +1239,88 @@
             var select = document.getElementById('dirSelect');
             if (select) select.value = saved;
             applyOutputDirection(saved);
+        }
+
+        function getOutputStyleState() {
+            var sizeEl = document.getElementById('fontSizeRange');
+            var lineEl = document.getElementById('lineHeightRange');
+            var gapEl = document.getElementById('paraGapRange');
+            return {
+                fontSize: sizeEl ? parseFloat(sizeEl.value) : 15.5,
+                lineHeight: lineEl ? parseFloat(lineEl.value) : 1.85,
+                paraGap: gapEl ? parseFloat(gapEl.value) : 10
+            };
+        }
+
+        function applyOutputStyle(style, persist) {
+            style = style || getOutputStyleState();
+            var fontSize = Math.min(22, Math.max(13, Number(style.fontSize) || 15.5));
+            var lineHeight = Math.min(2.4, Math.max(1.4, Number(style.lineHeight) || 1.85));
+            var paraGap = Math.min(28, Math.max(4, Number(style.paraGap) || 10));
+
+            var root = document.documentElement;
+            root.style.setProperty('--out-font-size', fontSize + 'px');
+            root.style.setProperty('--out-line-height', String(lineHeight));
+            root.style.setProperty('--out-para-gap', paraGap + 'px');
+
+            var sizeEl = document.getElementById('fontSizeRange');
+            var lineEl = document.getElementById('lineHeightRange');
+            var gapEl = document.getElementById('paraGapRange');
+            var sizeVal = document.getElementById('fontSizeValue');
+            var lineVal = document.getElementById('lineHeightValue');
+            var gapVal = document.getElementById('paraGapValue');
+
+            if (sizeEl) sizeEl.value = String(fontSize);
+            if (lineEl) lineEl.value = String(lineHeight);
+            if (gapEl) gapEl.value = String(paraGap);
+            if (sizeVal) sizeVal.textContent = fontSize % 1 === 0 ? String(fontSize) : fontSize.toFixed(1);
+            if (lineVal) lineVal.textContent = lineHeight.toFixed(2).replace(/0$/, '').replace(/\.$/, '');
+            if (gapVal) gapVal.textContent = String(Math.round(paraGap));
+
+            if (persist !== false) {
+                try {
+                    localStorage.setItem('outFontSize', String(fontSize));
+                    localStorage.setItem('outLineHeight', String(lineHeight));
+                    localStorage.setItem('outParaGap', String(paraGap));
+                    saveStudioDefaults();
+                } catch (e) {}
+            }
+        }
+
+        function onOutputStyleChange() {
+            applyOutputStyle(getOutputStyleState(), true);
+        }
+
+        function applyTemplateStyleDefaults(preset, persist) {
+            var style = TEMPLATE_STYLES[preset] || TEMPLATE_STYLES.default;
+            applyOutputStyle(style, persist !== false);
+        }
+
+        function initOutputStyle() {
+            var style = Object.assign({}, TEMPLATE_STYLES.default);
+            try {
+                var fs = localStorage.getItem('outFontSize');
+                var lh = localStorage.getItem('outLineHeight');
+                var pg = localStorage.getItem('outParaGap');
+                if (fs) style.fontSize = parseFloat(fs);
+                if (lh) style.lineHeight = parseFloat(lh);
+                if (pg) style.paraGap = parseFloat(pg);
+            } catch (e) {}
+            applyOutputStyle(style, false);
+        }
+
+        function saveStudioDefaults() {
+            try {
+                var payload = {
+                    theme: getTheme(),
+                    outputFont: (document.getElementById('fontSelect') || {}).value || 'cairo',
+                    outputDir: getOutputDirection(),
+                    outputPreset: getPreset(),
+                    copyFormat: getCopyFormat(),
+                    style: getOutputStyleState()
+                };
+                localStorage.setItem('siyyaqDefaults', JSON.stringify(payload));
+            } catch (e) {}
         }
 
         var OUTPUT_FONTS = {
@@ -1046,6 +1354,7 @@
             if (outputBox) outputBox.setAttribute('data-font', fontKey);
             try {
                 localStorage.setItem('outputFont', fontKey);
+                saveStudioDefaults();
             } catch (e) {}
         }
 
@@ -1073,12 +1382,8 @@
                 .replace(/"/g, '&quot;');
         }
 
-        function applyRtlMarks(text) {
-            return text.replace(/([.?!])(\s|$)/g, '$1\u200F$2');
-        }
-
         function looksLikeCodeLine(line) {
-            const t = line.trim();
+            var t = line.trim();
             if (!t) return false;
             if (/^(```|~~~)/.test(t)) return true;
             if (/^(<!--|<!DOCTYPE|<\/?[a-zA-Z][\w:-]*)/i.test(t)) return true;
@@ -1089,7 +1394,7 @@
         }
 
         function isProseLine(line) {
-            const t = line.trim();
+            var t = line.trim();
             if (!t) return false;
             if (/[\u0600-\u06FF]/.test(t) && !/^(<!--|<\/?[a-zA-Z]|`{3}|~{3})/.test(t)) return true;
             if (/^[A-Za-z].*[.!?]$/.test(t) && !looksLikeCodeLine(t) && t.split(/\s+/).length > 4) return true;
@@ -1101,62 +1406,62 @@
         }
 
         function tokenizeMixedContent(input) {
-            const lines = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-            const segments = [];
-            let i = 0;
+            var lines = input.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
+            var segments = [];
+            var i = 0;
 
             while (i < lines.length) {
-                const startI = i;
-                const line = lines[i];
-                const trimmed = line.trim();
+                var startI = i;
+                var line = lines[i];
+                var trimmed = line.trim();
 
-                const fenceMatch = trimmed.match(/^(```|~~~)(\S*)\s*$/);
+                var fenceMatch = trimmed.match(/^(```|~~~)(\S*)\s*$/);
                 if (fenceMatch) {
-                    const fence = fenceMatch[1];
-                    const lang = fenceMatch[2] || '';
+                    var fence = fenceMatch[1];
+                    var lang = fenceMatch[2] || '';
                     i++;
-                    const codeLines = [];
+                    var codeLines = [];
                     while (i < lines.length && lines[i].trim() !== fence) {
                         codeLines.push(lines[i]);
                         i++;
                     }
                     if (i < lines.length) i++;
-                    segments.push({ type: 'code', lang, content: codeLines.join('\n') });
+                    segments.push({ type: 'code', lang: lang, content: codeLines.join('\n') });
                     continue;
                 }
 
                 if (isLanguageLabel(trimmed) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1])) {
-                    const lang = trimmed;
+                    var labeledLang = trimmed;
                     i++;
-                    const codeLines = [];
+                    var labeledCode = [];
                     while (i < lines.length && !isProseLine(lines[i])) {
-                        codeLines.push(lines[i]);
+                        labeledCode.push(lines[i]);
                         i++;
                     }
-                    while (codeLines.length && codeLines[codeLines.length - 1].trim() === '') codeLines.pop();
-                    if (codeLines.length) {
-                        segments.push({ type: 'code', lang, content: codeLines.join('\n') });
+                    while (labeledCode.length && labeledCode[labeledCode.length - 1].trim() === '') labeledCode.pop();
+                    if (labeledCode.length) {
+                        segments.push({ type: 'code', lang: labeledLang, content: labeledCode.join('\n') });
                         continue;
                     }
-                    segments.push({ type: 'prose', content: lang });
+                    segments.push({ type: 'prose', content: labeledLang });
                     continue;
                 }
 
                 if (/^\s*(<!--|<!DOCTYPE\b|<(script|style|html|head|body|div|pre|code)\b)/i.test(line)) {
-                    const codeLines = [];
+                    var htmlCode = [];
                     while (i < lines.length && !isProseLine(lines[i])) {
-                        codeLines.push(lines[i]);
+                        htmlCode.push(lines[i]);
                         i++;
                     }
-                    while (codeLines.length && codeLines[codeLines.length - 1].trim() === '') codeLines.pop();
-                    segments.push({ type: 'code', lang: '', content: codeLines.join('\n') });
+                    while (htmlCode.length && htmlCode[htmlCode.length - 1].trim() === '') htmlCode.pop();
+                    segments.push({ type: 'code', lang: '', content: htmlCode.join('\n') });
                     continue;
                 }
 
-                const proseLines = [];
+                var proseLines = [];
                 while (i < lines.length) {
-                    const next = lines[i];
-                    const nextTrim = next.trim();
+                    var next = lines[i];
+                    var nextTrim = next.trim();
                     if (/^(```|~~~)\S*\s*$/.test(nextTrim)) break;
                     if (isLanguageLabel(nextTrim) && i + 1 < lines.length && looksLikeCodeLine(lines[i + 1])) break;
                     if (/^\s*(<!--|<!DOCTYPE\b|<(script|style|html|head|body)\b)/i.test(next)) break;
@@ -1176,56 +1481,97 @@
             return segments;
         }
 
-        function formatInlineCode(text) {
-            const parts = text.split(/(`[^`\n]+`)/g);
-            const isRtl = getOutputDirection() !== 'ltr';
-            return parts.map(part => {
+        function applyRtlMarks(text) {
+            return String(text)
+                .replace(/([.?!…،؛:])(\s|$)/g, '$1\u200F$2')
+                .replace(/(\d+)([^\d\u200E\u200F])/g, '$1\u200E$2');
+        }
+
+        function joinSoftLineBreaks(text) {
+            return String(text)
+                .replace(/\r\n/g, '\n')
+                .replace(/\r/g, '\n')
+                .replace(/[ \t]+\n/g, '\n')
+                .replace(/([^\n])\n(?!\n)/g, '$1 ')
+                .replace(/[ \t]{2,}/g, ' ')
+                .trim();
+        }
+
+        function formatInlineCode(text, options) {
+            options = options || {};
+            var parts = text.split(/(`[^`\n]+`)/g);
+            var isRtl = getOutputDirection() !== 'ltr';
+            return parts.map(function (part) {
                 if (part.length >= 2 && part.startsWith('`') && part.endsWith('`')) {
-                    return `<code class="inline-code">${escapeHtml(part.slice(1, -1))}</code>`;
+                    return '<code class="inline-code">' + escapeHtml(part.slice(1, -1)) + '</code>';
                 }
-                return escapeHtml(isRtl ? applyRtlMarks(part) : part);
+                var plain = isRtl ? applyRtlMarks(part) : part;
+                var escaped = escapeHtml(plain);
+                if (options.social) {
+                    return escaped.replace(/(^|\s)(#[\w\u0600-\u06FF_]+)/g, '$1<span class="hashtag">$2</span>');
+                }
+                return escaped;
             }).join('');
         }
 
         function renderCodeBlock(lang, content) {
-            const langLabel = lang ? `<span class="code-lang">${escapeHtml(lang)}</span>` : '';
-            return `<pre class="code-block" dir="ltr">${langLabel}<code>${escapeHtml(content)}</code></pre>`;
+            var langLabel = lang ? '<span class="code-lang">' + escapeHtml(lang) + '</span>' : '';
+            return '<pre class="code-block" dir="ltr">' + langLabel + '<code>' + escapeHtml(content) + '</code></pre>';
         }
 
         function renderProse(content, preset) {
             preset = preset || 'default';
-            var paragraphs = content.split(/\n{2,}/);
+            var normalized = joinSoftLineBreaks(content);
+            if (!normalized) return '';
+
+            var paragraphs = normalized.split(/\n{2,}/).map(function (p) {
+                return p.replace(/\s+/g, ' ').trim();
+            }).filter(Boolean);
+
             var html = '';
 
-            paragraphs.forEach(function (block) {
-                var nonEmpty = block.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
-                if (!nonEmpty.length) return;
-
-                nonEmpty.forEach(function (line) {
-                    if (preset === 'social') {
-                        var sentences = line.split(/(?<=[.?!…])\s+/).filter(Boolean);
-                        if (sentences.length <= 1) {
-                            html += '<p>' + formatInlineCode(line) + '</p>';
-                        } else {
-                            sentences.forEach(function (sentence) {
-                                html += '<p>' + formatInlineCode(sentence) + '</p>';
-                            });
-                        }
+            paragraphs.forEach(function (para) {
+                if (preset === 'social') {
+                    var sentences = para.split(/(?<=[.?!…])\s+/).filter(Boolean);
+                    if (sentences.length <= 1) {
+                        html += '<p>' + formatInlineCode(para, { social: true }) + '</p>';
                     } else {
-                        html += '<p>' + formatInlineCode(line) + '</p>';
+                        sentences.forEach(function (sentence) {
+                            html += '<p>' + formatInlineCode(sentence, { social: true }) + '</p>';
+                        });
                     }
-                });
+                    return;
+                }
+
+                if (preset === 'report') {
+                    html += '<p>' + formatInlineCode(para) + '</p>';
+                    return;
+                }
+
+                if (preset === 'codedoc') {
+                    if (/^#{1,3}\s+/.test(para)) {
+                        var heading = para.replace(/^#{1,3}\s+/, '');
+                        html += '<p><strong>' + formatInlineCode(heading) + '</strong></p>';
+                    } else {
+                        html += '<p>' + formatInlineCode(para) + '</p>';
+                    }
+                    return;
+                }
+
+                html += '<p>' + formatInlineCode(para) + '</p>';
             });
 
             return html;
         }
 
         function fallbackFormat(input) {
-            const formatted = getOutputDirection() === 'ltr' ? input : applyRtlMarks(input);
+            var joined = joinSoftLineBreaks(input);
+            var formatted = getOutputDirection() === 'ltr' ? joined : applyRtlMarks(joined);
             return formatted
-                .split('\n')
-                .filter(p => p.trim() !== '')
-                .map(p => `<p>${escapeHtml(p)}</p>`)
+                .split(/\n{2,}/)
+                .map(function (p) { return p.replace(/\s+/g, ' ').trim(); })
+                .filter(Boolean)
+                .map(function (p) { return '<p>' + escapeHtml(p) + '</p>'; })
                 .join('');
         }
 
@@ -1295,7 +1641,7 @@
         }
 
         function fallbackCopy(text) {
-            const ta = document.createElement('textarea');
+            var ta = document.createElement('textarea');
             ta.value = text;
             document.body.appendChild(ta);
             ta.select();
@@ -1308,13 +1654,116 @@
             document.body.removeChild(ta);
         }
 
+        function getCopyFormat() {
+            var select = document.getElementById('copyFormatSelect');
+            var value = select ? select.value : 'plain';
+            if (value !== 'plain' && value !== 'markdown' && value !== 'html' && value !== 'whatsapp') return 'plain';
+            return value;
+        }
+
+        function onCopyFormatChange() {
+            try {
+                localStorage.setItem('copyFormat', getCopyFormat());
+                saveStudioDefaults();
+            } catch (e) {}
+        }
+
+        function initCopyFormat() {
+            var saved = 'plain';
+            try { saved = localStorage.getItem('copyFormat') || 'plain'; } catch (e) {}
+            if (saved !== 'plain' && saved !== 'markdown' && saved !== 'html' && saved !== 'whatsapp') saved = 'plain';
+            var select = document.getElementById('copyFormatSelect');
+            if (select) select.value = saved;
+        }
+
+        function nodePlainText(node) {
+            return (node && (node.innerText || node.textContent) || '').replace(/\u00A0/g, ' ').trim();
+        }
+
+        function buildMarkdownFromOutput(outputBox) {
+            var parts = [];
+            Array.prototype.forEach.call(outputBox.children, function (child) {
+                if (child.classList && child.classList.contains('placeholder')) return;
+                if (child.classList && child.classList.contains('code-block')) {
+                    var langEl = child.querySelector('.code-lang');
+                    var codeEl = child.querySelector('code');
+                    var lang = langEl ? nodePlainText(langEl).toLowerCase() : '';
+                    var code = codeEl ? (codeEl.textContent || '') : nodePlainText(child);
+                    parts.push('```' + lang + '\n' + code.replace(/\n$/, '') + '\n```');
+                    return;
+                }
+                if (child.tagName === 'P') {
+                    var html = child.innerHTML;
+                    var md = html
+                        .replace(/<code class="inline-code">([\s\S]*?)<\/code>/gi, function (_, code) {
+                            return '`' + code.replace(/<[^>]+>/g, '') + '`';
+                        })
+                        .replace(/<span class="hashtag">([\s\S]*?)<\/span>/gi, '$1')
+                        .replace(/<strong>([\s\S]*?)<\/strong>/gi, '**$1**')
+                        .replace(/<br\s*\/?>/gi, '\n')
+                        .replace(/<[^>]+>/g, '');
+                    var tmp = document.createElement('textarea');
+                    tmp.innerHTML = md;
+                    parts.push((tmp.value || md).trim());
+                }
+            });
+            return parts.filter(Boolean).join('\n\n');
+        }
+
+        function buildHtmlFromOutput(outputBox) {
+            var clone = outputBox.cloneNode(true);
+            var placeholder = clone.querySelector('.placeholder');
+            if (placeholder) placeholder.remove();
+            var dir = getOutputDirection();
+            return '<article dir="' + dir + '" style="font-family: Cairo, sans-serif; line-height: 1.8;">\n' +
+                clone.innerHTML.trim() +
+                '\n</article>';
+        }
+
+        function buildWhatsAppFromOutput(outputBox) {
+            var parts = [];
+            Array.prototype.forEach.call(outputBox.children, function (child) {
+                if (child.classList && child.classList.contains('placeholder')) return;
+                if (child.classList && child.classList.contains('code-block')) {
+                    var codeEl = child.querySelector('code');
+                    var code = codeEl ? (codeEl.textContent || '') : nodePlainText(child);
+                    parts.push('```\n' + code.replace(/\n$/, '') + '\n```');
+                    return;
+                }
+                if (child.tagName === 'P') {
+                    var text = nodePlainText(child)
+                        .replace(/^#/gm, '#')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                    if (text) parts.push(text);
+                }
+            });
+            return parts.join('\n\n');
+        }
+
+        function getCopyPayload(outputBox, format) {
+            if (format === 'markdown') return buildMarkdownFromOutput(outputBox);
+            if (format === 'html') return buildHtmlFromOutput(outputBox);
+            if (format === 'whatsapp') return buildWhatsAppFromOutput(outputBox);
+            return nodePlainText(outputBox);
+        }
+
         function copyText() {
-            const outputBox = document.getElementById('outputText');
+            var outputBox = document.getElementById('outputText');
             if (!outputBox || outputBox.querySelector('.placeholder')) return;
-            const text = outputBox.innerText;
+            var format = getCopyFormat();
+            var text = getCopyPayload(outputBox, format);
+            var labels = {
+                plain: 'Plain text copied!',
+                markdown: 'Markdown copied!',
+                html: 'HTML copied!',
+                whatsapp: 'WhatsApp format copied!'
+            };
+            var msg = labels[format] || 'Text Copied!';
+
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(text).then(function () {
-                    showToast('Text Copied!');
+                    showToast(msg);
                 }).catch(function () {
                     fallbackCopy(text);
                 });
@@ -1326,14 +1775,15 @@
         // Optional panel resizer — isolated so failures never break Process Text
         (function initResizer() {
             try {
-                const resizer = document.getElementById('dragMe');
-                const leftPanel = document.getElementById('leftPanel');
-                const workspace = document.getElementById('workspace');
+                var resizer = document.getElementById('dragMe');
+                var leftPanel = document.getElementById('leftPanel');
+                var workspace = document.getElementById('workspace');
                 if (!resizer || !leftPanel || !workspace) return;
 
-                let isDragging = false;
+                var isDragging = false;
 
                 resizer.addEventListener('mousedown', function (e) {
+                    if (window.matchMedia('(max-width: 900px)').matches) return;
                     isDragging = true;
                     resizer.classList.add('active');
                     document.body.style.cursor = 'col-resize';
@@ -1343,8 +1793,8 @@
 
                 document.addEventListener('mousemove', function (e) {
                     if (!isDragging) return;
-                    const containerRect = workspace.getBoundingClientRect();
-                    let newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
+                    var containerRect = workspace.getBoundingClientRect();
+                    var newWidthPercent = ((e.clientX - containerRect.left) / containerRect.width) * 100;
                     if (newWidthPercent < 20) newWidthPercent = 20;
                     if (newWidthPercent > 75) newWidthPercent = 75;
                     leftPanel.style.width = newWidthPercent + '%';
@@ -1360,16 +1810,26 @@
 
                 document.addEventListener('mouseup', stopDrag);
                 window.addEventListener('blur', stopDrag);
+                window.addEventListener('resize', function () {
+                    if (window.matchMedia('(max-width: 900px)').matches) {
+                        leftPanel.style.width = '';
+                        stopDrag();
+                    }
+                });
             } catch (err) {
                 console.error('Resizer init failed', err);
             }
         })();
 
         updateMetrics();
+        initPreset();
+        initCopyFormat();
+        initOutputStyle();
         applyTheme(getTheme());
         initOutputFont();
         initOutputDirection();
         initOutputEdit();
+        saveStudioDefaults();
 
         // Google Analytics — load after idle so blocked networks never freeze the UI
         (function initAnalytics() {
